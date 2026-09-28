@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 
-import backgroundImage from "../../public/assest/background_2.avif";
+import backgroundImage from "../../../public/assest/background_2.avif";
 
 const features = [
   {

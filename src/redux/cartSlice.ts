@@ -1,151 +1,95 @@
-import {
-createSlice,
-PayloadAction,
-} from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-export interface CartProduct {
-size: string;
-id: string;
-name: string;
-price: number;
-image: string;
-quantity: number;
-}
+export type CartItem = {
+  id: string;
+  name: string;
+  slug: string;
+  image: string;
+  price: number;
+  quantity: number;
+};
 
-interface CartState {
-isCartOpen: boolean;
-items: CartProduct[];
-}
+type CartState = {
+  items: CartItem[];
+  isCartOpen: boolean;
+};
 
 const initialState: CartState = {
-isCartOpen: false,
-items: [],
+  items: [],
+  isCartOpen: false,
 };
 
 const cartSlice = createSlice({
-name: "cart",
+  name: "cart",
+  initialState,
+  reducers: {
+    setCartOpen(state, action: PayloadAction<boolean>) {
+      state.isCartOpen = action.payload;
+    },
 
-initialState,
+    addToCart(
+      state,
+      action: PayloadAction<Omit<CartItem, "quantity">>
+    ) {
+      const existing = state.items.find(
+        (item) => item.id === action.payload.id
+      );
 
-reducers: {
-/* ==========================================
-ADD TO CART
-========================================== */
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        state.items.push({
+          ...action.payload,
+          quantity: 1,
+        });
+      }
+    },
 
- 
-addToCart: (
-  state,
-  action: PayloadAction<
-    Omit<CartProduct, "quantity">
-  >
-) => {
-  const existingProduct =
-    state.items.find(
-      (item) =>
-        item.id === action.payload.id &&
-        item.size === action.payload.size
-    );
+    removeFromCart(state, action: PayloadAction<string>) {
+      state.items = state.items.filter(
+        (item) => item.id !== action.payload
+      );
+    },
 
-  if (existingProduct) {
-    existingProduct.quantity += 1;
-  } else {
-    state.items.push({
-      ...action.payload,
-      quantity: 1,
-    });
-  }
+    increaseQuantity(state, action: PayloadAction<string>) {
+      const item = state.items.find(
+        (item) => item.id === action.payload
+      );
 
-  // Open cart drawer automatically
-  state.isCartOpen = true;
-},
+      if (item) {
+        item.quantity += 1;
+      }
+    },
 
-/* ==========================================
-   REMOVE FROM CART
-========================================== */
+    decreaseQuantity(state, action: PayloadAction<string>) {
+      const item = state.items.find(
+        (item) => item.id === action.payload
+      );
 
-removeFromCart: (
-  state,
-  action: PayloadAction<string>
-) => {
-  state.items = state.items.filter(
-    (item) =>
-      item.id !== action.payload
-  );
-},
+      if (!item) return;
 
-/* ==========================================
-   INCREASE QUANTITY
-========================================== */
+      if (item.quantity <= 1) {
+        state.items = state.items.filter(
+          (cartItem) => cartItem.id !== action.payload
+        );
+      } else {
+        item.quantity -= 1;
+      }
+    },
 
-increaseQuantity: (
-  state,
-  action: PayloadAction<string>
-) => {
-  const item = state.items.find(
-    (item) =>
-      item.id === action.payload
-  );
-
-  if (item) {
-    item.quantity += 1;
-  }
-},
-
-/* ==========================================
-   DECREASE QUANTITY
-========================================== */
-
-decreaseQuantity: (
-  state,
-  action: PayloadAction<string>
-) => {
-  const item = state.items.find(
-    (item) =>
-      item.id === action.payload
-  );
-
-  if (!item) return;
-
-  if (item.quantity > 1) {
-    item.quantity -= 1;
-  } else {
-    state.items = state.items.filter(
-      (cartItem) =>
-        cartItem.id !== action.payload
-    );
-  }
-},
-
-/* ==========================================
-   OPEN / CLOSE CART DRAWER
-========================================== */
-
-setCartOpen: (
-  state,
-  action: PayloadAction<boolean>
-) => {
-  state.isCartOpen = action.payload;
-},
-
-/* ==========================================
-   CLEAR CART
-========================================== */
-
-clearCart: (state) => {
-  state.items = [];
-},
- 
-
-},
+    clearCart(state) {
+      state.items = [];
+    },
+  },
 });
 
 export const {
-addToCart,
-removeFromCart,
-increaseQuantity,
-decreaseQuantity,
-setCartOpen,
-clearCart,
+  setCartOpen,
+  addToCart,
+  removeFromCart,
+  increaseQuantity,
+  decreaseQuantity,
+  clearCart,
 } = cartSlice.actions;
 
 export default cartSlice.reducer;

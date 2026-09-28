@@ -10,10 +10,11 @@ import {
 import { useRef } from "react";
 import type { StaticImageData } from "next/image";
 
-import image1 from "../../public/assest/Warrior-spirit-graphic.avif";
-import image2 from "../../public/assest/Blue-flame-graphic.avif";
-import image3 from "../../public/assest/Demon-blood-graphic.avif";
-import image4 from "../../public/assest/Will-of-the-sun-4.avif";
+import image1 from "../../../public/assest/Warrior-spirit-graphic.avif";
+import image2 from "../../../public/assest/Blue-flame-graphic.avif";
+import image3 from "../../../public/assest/Demon-blood-graphic.avif";
+import image4 from "../../../public/assest/Will-of-the-sun-4.avif";
+
 
 /* =====================================================
    IMAGES
