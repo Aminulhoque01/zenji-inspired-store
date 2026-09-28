@@ -6,7 +6,7 @@ import Providers from "../components/Providers";
  
 
 export const metadata: Metadata = {
-  title: "KAGE — Anime Streetwear",
+  title: "ZENJI — Anime Streetwear",
   description:
     "Premium anime inspired streetwear.",
 };
