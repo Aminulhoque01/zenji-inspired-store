@@ -519,7 +519,7 @@ export default function Hero() {
             ============================================== */}
 
             <motion.a
-              href="#shop"
+              href="/drop"
               initial={{
                 opacity: 0,
                 y: 20,
@@ -573,7 +573,7 @@ export default function Hero() {
         ================================================== */}
 
         <motion.a
-          href="#shop"
+          href="/drop"
           style={{
             opacity: shopButtonOpacity,
             y: shopButtonY,

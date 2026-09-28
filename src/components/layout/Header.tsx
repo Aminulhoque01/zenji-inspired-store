@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -21,39 +20,65 @@ import {
   useState,
 } from "react";
 
- 
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
- 
 import CartDrawer from "./CartDrawer";
-import { useAppDispatch, useAppSelector } from "@/src/redux/hooks";
-import { setCartOpen } from "@/src/redux/cartSlice";
+
+import {
+  useAppDispatch,
+  useAppSelector,
+} from "@/src/redux/hooks";
+
+import {
+  setCartOpen,
+} from "@/src/redux/cartSlice";
+
+/* =========================================================
+   HEADER
+========================================================= */
 
 export default function Header() {
+  const pathname = usePathname();
+
+  const dispatch = useAppDispatch();
+
+  /* =======================================================
+     MOBILE MENU
+  ======================================================= */
+
   const [mobileMenu, setMobileMenu] =
     useState(false);
 
-  const [heroFinished, setHeroFinished] =
+  /* =======================================================
+     SCROLL STATE
+
+     false = top of page
+     true  = user has scrolled
+
+     Top:
+       Header sits underneath AnnouncementBar
+       Header is transparent
+
+     Scroll:
+       AnnouncementBar disappears
+       Header moves to top
+       Header becomes black
+  ======================================================= */
+
+  const [scrolled, setScrolled] =
     useState(false);
 
-  const [
-    announcementHeight,
-    setAnnouncementHeight,
-  ] = useState(0);
+  /* =======================================================
+     ANNOUNCEMENT HEIGHT
+  ======================================================= */
 
-  const dispatch = useAppDispatch();
-  const pathname = usePathname();
-  const isDarkPage =
-    pathname === "/collection" ||
-    pathname === "/wishlist";
+  const [announcementHeight, setAnnouncementHeight] =
+    useState(0);
 
-  /*
-   * ==========================================
-   * CART
-   * ==========================================
-   */
+  /* =======================================================
+     CART
+  ======================================================= */
 
   const cartItems = useAppSelector(
     (state) => state.cart.items
@@ -65,40 +90,73 @@ export default function Header() {
     0
   );
 
+  /* =======================================================
+     WISHLIST
+  ======================================================= */
+
   const wishlistCount = useAppSelector(
-    (state) => state.wishlist.items.length
+    (state) =>
+      state.wishlist.items.length
   );
 
-  /*
-   * ==========================================
-   * GET ANNOUNCEMENT BAR HEIGHT
-   * ==========================================
-   *
-   * Header initially stays directly below
-   * the AnnouncementBar.
-   */
+  /* =======================================================
+     GET ANNOUNCEMENT HEIGHT
+  ======================================================= */
 
   useEffect(() => {
-    const updateAnnouncementHeight =
-      () => {
-        const announcement =
-          document.getElementById(
-            "announcement-bar"
-          );
+    const updateAnnouncementHeight = () => {
+      const announcement =
+        document.getElementById(
+          "announcement-bar"
+        );
 
-        if (!announcement) {
-          setAnnouncementHeight(0);
-          return;
-        }
+      if (!announcement) {
+        setAnnouncementHeight(0);
+        return;
+      }
 
-        const height =
-          announcement.getBoundingClientRect()
-            .height;
+      const height =
+        announcement.getBoundingClientRect()
+          .height;
 
-        setAnnouncementHeight(height);
-      };
+      setAnnouncementHeight(height);
+    };
+
+    /*
+     * Initial measurement
+     */
 
     updateAnnouncementHeight();
+
+    /*
+     * Resize observer
+     * This is important because
+     * AnnouncementBar changes height
+     * when it hides.
+     */
+
+    const announcement =
+      document.getElementById(
+        "announcement-bar"
+      );
+
+    let resizeObserver: ResizeObserver | null =
+      null;
+
+    if (announcement) {
+      resizeObserver =
+        new ResizeObserver(() => {
+          updateAnnouncementHeight();
+        });
+
+      resizeObserver.observe(
+        announcement
+      );
+    }
+
+    /*
+     * Window resize
+     */
 
     window.addEventListener(
       "resize",
@@ -106,6 +164,8 @@ export default function Header() {
     );
 
     return () => {
+      resizeObserver?.disconnect();
+
       window.removeEventListener(
         "resize",
         updateAnnouncementHeight
@@ -113,58 +173,34 @@ export default function Header() {
     };
   }, []);
 
-  /*
-   * ==========================================
-   * HERO / HEADER POSITION
-   * ==========================================
-   *
-   * While hero is visible:
-   *
-   * AnnouncementBar
-   *        ↓
-   * Header
-   *        ↓
-   * Hero
-   *
-   * After hero:
-   *
-   * Header
-   *        ↓
-   * Content
-   */
+  /* =======================================================
+     SCROLL DETECTION
+  ======================================================= */
 
   useEffect(() => {
     const handleScroll = () => {
-      const hero =
-        document.getElementById("hero");
-
-      if (!hero) return;
-
-      const heroRect =
-        hero.getBoundingClientRect();
-
       /*
-       * Desktop header height.
+       * Even a small scroll will:
+       *
+       * 1. Hide AnnouncementBar
+       * 2. Move Header to top
+       * 3. Make Header black
        */
 
-      const headerHeight =
-        window.innerWidth >= 1024
-          ? 78
-          : 70;
-
-      /*
-       * Hero is finished when its bottom
-       * reaches the top of the fixed header.
-       */
-
-      const finished =
-        heroRect.bottom <=
-        headerHeight;
-
-      setHeroFinished(finished);
+      setScrolled(
+        window.scrollY > 10
+      );
     };
 
+    /*
+     * Check initial position
+     */
+
     handleScroll();
+
+    /*
+     * Listen to scroll
+     */
 
     window.addEventListener(
       "scroll",
@@ -174,61 +210,57 @@ export default function Header() {
       }
     );
 
-    window.addEventListener(
-      "resize",
-      handleScroll
-    );
-
     return () => {
       window.removeEventListener(
         "scroll",
         handleScroll
       );
-
-      window.removeEventListener(
-        "resize",
-        handleScroll
-      );
     };
   }, []);
 
-  /*
-   * ==========================================
-   * HEADER TOP POSITION
-   * ==========================================
-   *
-   * Before hero finishes:
-   *
-   * top = AnnouncementBar height
-   *
-   * After hero finishes:
-   *
-   * top = 0
-   */
+  /* =======================================================
+     CLOSE MOBILE MENU ON ROUTE CHANGE
+  ======================================================= */
 
-  const headerTop =
-    isDarkPage
-      ? 0
-      : heroFinished
-        ? 0
-        : announcementHeight;
+  useEffect(() => {
+    setMobileMenu(false);
+  }, [pathname]);
 
-  /*
-   * ==========================================
-   * HEADER STYLE
-   * ==========================================
-   */
+  /* =======================================================
+     HEADER POSITION
+  ======================================================= */
 
-  const headerBackground =
-    isDarkPage || heroFinished
-      ? "bg-black shadow-[0_1px_0_rgba(255,255,255,0.08)]"
-      : "bg-transparent";
+  const headerTop = scrolled
+    ? 0
+    : announcementHeight;
+
+  /* =======================================================
+     HEADER BACKGROUND
+  ======================================================= */
+
+  const headerBackground = scrolled
+    ? "bg-black shadow-[0_1px_0_rgba(255,255,255,0.08)]"
+    : "bg-transparent";
+
+  /* =======================================================
+     ACTIVE NAV
+  ======================================================= */
+
+  const isActive = (
+    href: string
+  ) => {
+    return pathname === href;
+  };
+
+  /* =======================================================
+     RENDER
+  ======================================================= */
 
   return (
     <>
-      {/* =================================================
+      {/* ===================================================
           DESKTOP HEADER
-      ================================================== */}
+      =================================================== */}
 
       <header
         style={{
@@ -237,12 +269,13 @@ export default function Header() {
         className={`
           fixed
           left-0
-          z-[40]
+          z-[100]
           hidden
           w-full
           text-white
-          transition-[background-color,box-shadow,top]
+          transition-[top,background-color,box-shadow]
           duration-500
+          ease-out
           lg:block
           ${headerBackground}
         `}
@@ -259,25 +292,25 @@ export default function Header() {
         >
           {/* =================================================
               LOGO
-          ================================================== */}
+          ================================================= */}
 
-          <a
+          <Link
             href="/"
             className="
+              shrink-0
               font-display
               text-[34px]
+              font-black
               leading-none
               tracking-[0.15em]
-               
             "
           >
-             
             ZENJI
-          </a>
+          </Link>
 
           {/* =================================================
               CENTER NAVIGATION
-          ================================================== */}
+          ================================================= */}
 
           <nav
             className="
@@ -291,123 +324,45 @@ export default function Header() {
           >
             {/* DROP */}
 
-            <a
-              href="#shop"
-              className="
-                group
-                relative
-                text-[11px]
-                font-bold
-                uppercase
-                tracking-[0.18em]
-              "
+            <DesktopNavLink
+              href="/drop"
+              active={isActive("/drop")}
             >
-              Drop
-
-              <span
-                className="
-                  absolute
-                  -bottom-2
-                  left-0
-                  h-[1px]
-                  w-0
-                  bg-white
-                  transition-all
-                  duration-300
-                  group-hover:w-full
-                "
-              />
-            </a>
+              DROP
+            </DesktopNavLink>
 
             {/* COLLECTION */}
 
-            <Link
+            <DesktopNavLink
               href="/collection"
-              className="
-                group
-                relative
-                text-[11px]
-                font-bold
-                uppercase
-                tracking-[0.18em]
-              "
+              active={isActive(
+                "/collection"
+              )}
             >
-              Collection
-
-              <span
-                className="
-                  absolute
-                  -bottom-2
-                  left-0
-                  h-[1px]
-                  w-0
-                  bg-white
-                  transition-all
-                  duration-300
-                  group-hover:w-full
-                "
-              />
-            </Link>
+              COLLECTION
+            </DesktopNavLink>
 
             {/* LOOKBOOK */}
 
-            <a
-              href="#lookbook"
-              className="
-                group
-                relative
-                text-[11px]
-                font-bold
-                uppercase
-                tracking-[0.18em]
-              "
+            <DesktopNavLink
+              href="/lookbook"
+              active={isActive(
+                "/lookbook"
+              )}
             >
-              Lookbook
-
-              <span
-                className="
-                  absolute
-                  -bottom-2
-                  left-0
-                  h-[1px]
-                  w-0
-                  bg-white
-                  transition-all
-                  duration-300
-                  group-hover:w-full
-                "
-              />
-            </a>
+              LOOKBOOK
+            </DesktopNavLink>
 
             {/* OUR STORY */}
 
-            <a
-              href="#story"
-              className="
-                group
-                relative
-                text-[11px]
-                font-bold
-                uppercase
-                tracking-[0.18em]
-              "
+            <DesktopNavLink
+              href="/our-story"
+              active={isActive(
+                "/our-story"
+              )}
             >
-              Our Story
-
-              <span
-                className="
-                  absolute
-                  -bottom-2
-                  left-0
-                  h-[1px]
-                  w-0
-                  bg-white
-                  transition-all
-                  duration-300
-                  group-hover:w-full
-                "
-              />
-            </a>
+              OUR STORY
+            </DesktopNavLink>
 
             {/* MORE */}
 
@@ -417,23 +372,28 @@ export default function Header() {
                 flex
                 items-center
                 gap-1
+                font-mono
                 text-[11px]
                 font-bold
                 uppercase
                 tracking-[0.18em]
+                text-white
+                transition-opacity
+                hover:opacity-60
               "
             >
-              More
+              MORE
 
               <ChevronDown
                 size={13}
+                strokeWidth={1.7}
               />
             </button>
           </nav>
 
           {/* =================================================
               RIGHT ACTIONS
-          ================================================== */}
+          ================================================= */}
 
           <div
             className="
@@ -492,6 +452,7 @@ export default function Header() {
                     px-1
                     text-[8px]
                     font-bold
+                    text-white
                   "
                 >
                   {wishlistCount}
@@ -536,6 +497,7 @@ export default function Header() {
                     px-1
                     text-[8px]
                     font-bold
+                    text-white
                   "
                 >
                   {cartCount}
@@ -563,9 +525,9 @@ export default function Header() {
         </div>
       </header>
 
-      {/* =================================================
+      {/* ===================================================
           MOBILE HEADER
-      ================================================== */}
+      =================================================== */}
 
       <header
         style={{
@@ -574,11 +536,12 @@ export default function Header() {
         className={`
           fixed
           left-0
-          z-[80]
+          z-[100]
           w-full
           text-white
-          transition-[background-color,box-shadow,top]
+          transition-[top,background-color,box-shadow]
           duration-500
+          ease-out
           lg:hidden
           ${headerBackground}
         `}
@@ -600,6 +563,11 @@ export default function Header() {
               setMobileMenu(true)
             }
             aria-label="Open menu"
+            className="
+              transition-transform
+              duration-200
+              hover:scale-110
+            "
           >
             <Menu
               size={24}
@@ -609,17 +577,18 @@ export default function Header() {
 
           {/* LOGO */}
 
-          <a
+          <Link
             href="/"
             className="
               font-display
               text-[32px]
+              font-black
               leading-none
               tracking-[-0.08em]
             "
           >
-            KAGE
-          </a>
+            ZENJI
+          </Link>
 
           {/* CART */}
 
@@ -654,6 +623,7 @@ export default function Header() {
                   px-1
                   text-[8px]
                   font-bold
+                  text-white
                 "
               >
                 {cartCount}
@@ -663,9 +633,9 @@ export default function Header() {
         </div>
       </header>
 
-      {/* =================================================
+      {/* ===================================================
           MOBILE MENU
-      ================================================== */}
+      =================================================== */}
 
       <AnimatePresence>
         {mobileMenu && (
@@ -694,7 +664,7 @@ export default function Header() {
             className="
               fixed
               inset-0
-              z-[100]
+              z-[200]
               bg-[#111]
               text-white
             "
@@ -710,13 +680,19 @@ export default function Header() {
                 absolute
                 right-5
                 top-5
+                transition-transform
+                duration-200
+                hover:rotate-90
               "
               aria-label="Close menu"
             >
-              <X size={27} />
+              <X
+                size={27}
+                strokeWidth={1.7}
+              />
             </button>
 
-            {/* MENU CONTENT */}
+            {/* MOBILE MENU CONTENT */}
 
             <div
               className="
@@ -730,89 +706,201 @@ export default function Header() {
               "
             >
               <nav className="flex flex-col">
-                {[
-                  "Drop",
-                  "Collection",
-                  "Lookbook",
-                  "Our Story",
-                  "Contact",
-                ].map(
-                  (
-                    item,
-                    index
-                  ) => (
-                    <motion.a
-                      key={item}
-                      href={
-                        item === "Drop"
-                          ? "#shop"
-                          : item ===
-                              "Collection"
-                            ? "#collection"
-                            : item ===
-                                "Lookbook"
-                              ? "#lookbook"
-                              : item ===
-                                  "Our Story"
-                                ? "#story"
-                                : "#"
-                      }
-                      onClick={() =>
-                        setMobileMenu(
-                          false
-                        )
-                      }
-                      initial={{
-                        opacity: 0,
-                        x: 30,
-                      }}
-                      animate={{
-                        opacity: 1,
-                        x: 0,
-                      }}
-                      transition={{
-                        delay:
-                          index *
-                          0.08,
-                      }}
-                      className="
-                        border-b
-                        border-white/10
-                        py-5
-                        font-display
-                        text-5xl
-                        uppercase
-                        tracking-[-0.04em]
-                      "
-                    >
-                      {item}
-                    </motion.a>
-                  )
-                )}
+                {/* DROP */}
+
+                <MobileNavLink
+                  href="/drop"
+                  index={0}
+                  onClick={() =>
+                    setMobileMenu(false)
+                  }
+                >
+                  DROP
+                </MobileNavLink>
+
+                {/* COLLECTION */}
+
+                <MobileNavLink
+                  href="/collection"
+                  index={1}
+                  onClick={() =>
+                    setMobileMenu(false)
+                  }
+                >
+                  COLLECTION
+                </MobileNavLink>
+
+                {/* LOOKBOOK */}
+
+                <MobileNavLink
+                  href="/lookbook"
+                  index={2}
+                  onClick={() =>
+                    setMobileMenu(false)
+                  }
+                >
+                  LOOKBOOK
+                </MobileNavLink>
+
+                {/* OUR STORY */}
+
+                <MobileNavLink
+                  href="/our-story"
+                  index={3}
+                  onClick={() =>
+                    setMobileMenu(false)
+                  }
+                >
+                  OUR STORY
+                </MobileNavLink>
+
+                {/* WISHLIST */}
+
+                <MobileNavLink
+                  href="/wishlist"
+                  index={4}
+                  onClick={() =>
+                    setMobileMenu(false)
+                  }
+                >
+                  WISHLIST
+                </MobileNavLink>
               </nav>
 
-              {/* FOOTER */}
+              {/* MOBILE FOOTER */}
 
               <div
                 className="
                   border-t
                   border-white/10
                   pt-5
-                  text-[9px]
+                  font-mono
+                  text-[8px]
                   uppercase
                   tracking-[0.25em]
-                  text-white/50
+                  text-white/40
                 "
               >
-                KAGE® — ANIME STREETWEAR
+                ZENJI® — ANIME STREETWEAR
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* CART DRAWER */}
+      {/* ===================================================
+          CART DRAWER
+      =================================================== */}
+
       <CartDrawer />
     </>
   );
-} 
+}
+
+/* =========================================================
+   DESKTOP NAV LINK
+========================================================= */
+
+function DesktopNavLink({
+  href,
+  children,
+  active,
+}: {
+  href: string;
+  children: React.ReactNode;
+  active?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`
+        group
+        relative
+        font-mono
+        text-[11px]
+        font-bold
+        uppercase
+        tracking-[0.18em]
+        transition-colors
+        duration-200
+        ${
+          active
+            ? "text-red-600"
+            : "text-white hover:text-white"
+        }
+      `}
+    >
+      {children}
+
+      <span
+        className={`
+          absolute
+          -bottom-2
+          left-0
+          h-[1px]
+          bg-current
+          transition-all
+          duration-300
+          ${
+            active
+              ? "w-full"
+              : "w-0 group-hover:w-full"
+          }
+        `}
+      />
+    </Link>
+  );
+}
+
+/* =========================================================
+   MOBILE NAV LINK
+========================================================= */
+
+function MobileNavLink({
+  href,
+  children,
+  index,
+  onClick,
+}: {
+  href: string;
+  children: React.ReactNode;
+  index: number;
+  onClick: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{
+        opacity: 0,
+        x: 30,
+      }}
+      animate={{
+        opacity: 1,
+        x: 0,
+      }}
+      transition={{
+        delay: index * 0.08,
+      }}
+    >
+      <Link
+        href={href}
+        onClick={onClick}
+        className="
+          block
+          border-b
+          border-white/10
+          py-5
+          font-display
+          text-5xl
+          font-black
+          uppercase
+          tracking-[-0.04em]
+          transition-colors
+          duration-200
+          hover:text-red-600
+        "
+      >
+        {children}
+      </Link>
+    </motion.div>
+  );
+}

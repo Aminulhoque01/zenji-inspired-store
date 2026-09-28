@@ -351,6 +351,7 @@ export default function WishlistPage() {
                               slug: item.slug,
                               image: item.image,
                               price: item.price,
+                              size: "M"
                             })
                           );
 

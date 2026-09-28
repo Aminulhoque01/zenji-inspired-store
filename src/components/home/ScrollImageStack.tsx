@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import {
   motion,
   useScroll,
@@ -8,23 +7,16 @@ import {
   type MotionValue,
 } from "framer-motion";
 import { useRef } from "react";
-import type { StaticImageData } from "next/image";
-
-import image1 from "../../../public/assest/Warrior-spirit-graphic.avif";
-import image2 from "../../../public/assest/Blue-flame-graphic.avif";
-import image3 from "../../../public/assest/Demon-blood-graphic.avif";
-import image4 from "../../../public/assest/Will-of-the-sun-4.avif";
-
 
 /* =====================================================
    IMAGES
 ===================================================== */
 
-const images: StaticImageData[] = [
-  image1,
-  image2,
-  image3,
-  image4,
+const images: string[] = [
+  "/assest/Warrior-spirit-graphic.avif",
+  "/assest/Blue-flame-graphic.avif",
+  "/assest/Demon-blood-graphic.avif",
+  "/assest/Will-of-the-sun-4.avif",
 ];
 
 /* =====================================================
@@ -32,7 +24,7 @@ const images: StaticImageData[] = [
 ===================================================== */
 
 interface SaleImageProps {
-  image: StaticImageData;
+  image: string;
   index: number;
   total: number;
   scrollYProgress: MotionValue<number>;
@@ -44,16 +36,9 @@ function SaleImage({
   total,
   scrollYProgress,
 }: SaleImageProps) {
-  /*
-   * Each image has its own scroll range.
-   *
-   * 4 images:
-   *
-   * IMAGE 1 → already visible
-   * IMAGE 2 → 25%
-   * IMAGE 3 → 50%
-   * IMAGE 4 → 75%
-   */
+  /* =================================================
+     SCROLL RANGE
+  ================================================= */
 
   const start = index / total;
   const end = (index + 1) / total;
@@ -62,140 +47,107 @@ function SaleImage({
      Y POSITION
   ================================================= */
 
-  let y;
-
-  if (index === 0) {
-    /*
-     * IMAGE 1 NEVER MOVES.
-     *
-     * It stays underneath all other images.
-     */
-
-    y = useTransform(
-      scrollYProgress,
-      [0, 1],
-      ["0%", "0%"]
-    );
-  } else {
-    /*
-     * Other images:
-     *
-     * Start below screen
-     * ↓
-     * Move to final position
-     * ↓
-     * STAY THERE until section ends
-     */
-
-    y = useTransform(
-      scrollYProgress,
-      [
-        0,
-        start,
-        start + (end - start) * 0.75,
-        1,
-      ],
-      [
-        "115%",
-        "115%",
-        "0%",
-        "0%",
-      ]
-    );
-  }
+  const y =
+    index === 0
+      ? useTransform(
+          scrollYProgress,
+          [0, 1],
+          ["0%", "0%"],
+        )
+      : useTransform(
+          scrollYProgress,
+          [
+            0,
+            start,
+            start + (end - start) * 0.75,
+            1,
+          ],
+          [
+            "115%",
+            "115%",
+            "0%",
+            "0%",
+          ],
+        );
 
   /* =================================================
      SCALE
   ================================================= */
 
-  let scale;
-
-  if (index === 0) {
-    scale = useTransform(
-      scrollYProgress,
-      [0, 1],
-      [1, 1]
-    );
-  } else {
-    scale = useTransform(
-      scrollYProgress,
-      [
-        start,
-        start + (end - start) * 0.75,
-        1,
-      ],
-      [
-        0.94,
-        1,
-        1,
-      ]
-    );
-  }
+  const scale =
+    index === 0
+      ? useTransform(
+          scrollYProgress,
+          [0, 1],
+          [1, 1],
+        )
+      : useTransform(
+          scrollYProgress,
+          [
+            start,
+            start + (end - start) * 0.75,
+            1,
+          ],
+          [
+            0.94,
+            1,
+            1,
+          ],
+        );
 
   /* =================================================
      ROTATION
   ================================================= */
 
-  let rotate;
-
-  if (index === 0) {
-    rotate = useTransform(
-      scrollYProgress,
-      [0, 1],
-      [0, 0]
-    );
-  } else {
-    rotate = useTransform(
-      scrollYProgress,
-      [
-        start,
-        start + (end - start) * 0.75,
-        1,
-      ],
-      [
-        index % 2 === 0 ? 1.5 : -1.5,
-        0,
-        0,
-      ]
-    );
-  }
+  const rotate =
+    index === 0
+      ? useTransform(
+          scrollYProgress,
+          [0, 1],
+          [0, 0],
+        )
+      : useTransform(
+          scrollYProgress,
+          [
+            start,
+            start + (end - start) * 0.75,
+            1,
+          ],
+          [
+            index % 2 === 0 ? 1.5 : -1.5,
+            0,
+            0,
+          ],
+        );
 
   /* =================================================
      OPACITY
   ================================================= */
 
-  let opacity;
+  const opacity =
+    index === 0
+      ? useTransform(
+          scrollYProgress,
+          [0, 1],
+          [1, 1],
+        )
+      : useTransform(
+          scrollYProgress,
+          [
+            start,
+            start + 0.025,
+            1,
+          ],
+          [
+            0,
+            1,
+            1,
+          ],
+        );
 
-  if (index === 0) {
-    /*
-     * IMAGE 1 ALWAYS VISIBLE.
-     */
-
-    opacity = useTransform(
-      scrollYProgress,
-      [0, 1],
-      [1, 1]
-    );
-  } else {
-    /*
-     * New image fades in very quickly,
-     * then stays visible until the end.
-     */
-
-    opacity = useTransform(
-      scrollYProgress,
-      [
-        start,
-        start + 0.025,
-        1,
-      ],
-      [
-        0,
-        1,
-        1,
-      ]
-    );
-  }
+  /* =================================================
+     RENDER
+  ================================================= */
 
   return (
     <motion.div
@@ -204,16 +156,6 @@ function SaleImage({
         scale,
         rotate,
         opacity,
-
-        /*
-         * VERY IMPORTANT
-         *
-         * Later image = higher z-index.
-         *
-         * Image 4 will therefore stay
-         * above Image 3, Image 2 and Image 1.
-         */
-
         zIndex: index + 1,
       }}
       className="
@@ -232,17 +174,22 @@ function SaleImage({
         will-change-transform
       "
     >
-      <Image
+      {/* =================================================
+          NORMAL HTML IMAGE
+      ================================================= */}
+
+      <img
         src={image}
         alt={`Sale product ${index + 1}`}
-        fill
-        priority={index === 0}
-        sizes="
-          (max-width: 640px) 90vw,
-          (max-width: 1024px) 70vw,
-          58vw
+        className="
+          absolute
+          inset-0
+
+          h-full
+          w-full
+
+          object-cover
         "
-        className="object-cover"
       />
     </motion.div>
   );
@@ -259,9 +206,11 @@ export default function ScrollImageStack() {
     target: sectionRef,
 
     /*
-     * Start animation when section reaches viewport top.
+     * Animation starts when section
+     * reaches the top of viewport.
      *
-     * End when the entire section has passed.
+     * Animation ends when section
+     * completely passes through viewport.
      */
 
     offset: ["start start", "end end"],
@@ -272,8 +221,11 @@ export default function ScrollImageStack() {
       ref={sectionRef}
       className="
         relative
+
         h-[500vh]
+
         w-full
+
         bg-white
       "
     >
@@ -298,7 +250,6 @@ export default function ScrollImageStack() {
           bg-white
         "
       >
-
         {/* =================================================
             TOP LEFT CONTENT
         ================================================= */}
@@ -306,13 +257,13 @@ export default function ScrollImageStack() {
         <div
           className="
             absolute
+
             left-[5vw]
             top-[4vh]
 
             z-[100]
           "
         >
-
           {/* Small Label */}
 
           <div
@@ -320,9 +271,13 @@ export default function ScrollImageStack() {
               mb-3
 
               font-mono
+
               text-[8px]
+
               font-medium
+
               uppercase
+
               tracking-[0.25em]
 
               text-black/45
@@ -339,12 +294,12 @@ export default function ScrollImageStack() {
             WHILE STOCKS LAST
           </div>
 
-
           {/* SALE */}
 
           <h2
             className="
               font-black
+
               uppercase
 
               leading-[0.72]
@@ -364,9 +319,7 @@ export default function ScrollImageStack() {
           >
             SALE
           </h2>
-
         </div>
-
 
         {/* =================================================
             CENTER IMAGE STACK
@@ -377,6 +330,7 @@ export default function ScrollImageStack() {
             absolute
 
             left-1/2
+
             top-[26vh]
 
             w-[90vw]
@@ -388,20 +342,22 @@ export default function ScrollImageStack() {
             aspect-[4/3]
 
             sm:top-[25vh]
+
             sm:w-[78vw]
 
             md:top-[24vh]
+
             md:w-[65vw]
 
             lg:top-[23vh]
+
             lg:w-[58vw]
 
             xl:w-[54vw]
           "
         >
-
           {/* =================================================
-              IMAGE STACK
+              IMAGE STACK CONTAINER
           ================================================= */}
 
           <div
@@ -409,24 +365,21 @@ export default function ScrollImageStack() {
               relative
 
               h-full
+
               w-full
             "
           >
-
             {images.map((image, index) => (
               <SaleImage
-                key={image.src}
+                key={image}
                 image={image}
                 index={index}
                 total={images.length}
                 scrollYProgress={scrollYProgress}
               />
             ))}
-
           </div>
-
         </div>
-
 
         {/* =================================================
             BOTTOM INFO
@@ -441,12 +394,15 @@ export default function ScrollImageStack() {
             bottom-6
 
             left-[5vw]
+
             right-[5vw]
 
             z-[100]
 
             flex
+
             items-center
+
             justify-between
 
             font-mono
@@ -462,7 +418,6 @@ export default function ScrollImageStack() {
             sm:text-[9px]
           "
         >
-
           <span>
             SCROLL TO EXPLORE
           </span>
@@ -470,9 +425,7 @@ export default function ScrollImageStack() {
           <span>
             04 PRODUCTS
           </span>
-
         </div>
-
       </div>
     </section>
   );

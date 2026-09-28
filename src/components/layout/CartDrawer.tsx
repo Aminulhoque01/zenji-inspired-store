@@ -13,23 +13,37 @@ import {
   AnimatePresence,
   motion,
 } from "framer-motion";
-import { useAppDispatch, useAppSelector } from "@/src/redux/hooks";
-import { decreaseQuantity, increaseQuantity, removeFromCart, setCartOpen } from "@/src/redux/cartSlice";
 
- 
+import {
+  useAppDispatch,
+  useAppSelector,
+} from "@/src/redux/hooks";
 
- 
+import {
+  decreaseQuantity,
+  increaseQuantity,
+  removeFromCart,
+  setCartOpen,
+} from "@/src/redux/cartSlice";
 
 export default function CartDrawer() {
   const dispatch = useAppDispatch();
 
+  /* =========================================================
+     CART STATE
+  ========================================================= */
+
   const isOpen = useAppSelector(
-    (state) => state.cart.isCartOpen
+    (state) => state.cart.cartOpen
   );
 
   const items = useAppSelector(
     (state) => state.cart.items
   );
+
+  /* =========================================================
+     TOTALS
+  ========================================================= */
 
   const subtotal = items.reduce(
     (total, item) =>
@@ -46,17 +60,31 @@ export default function CartDrawer() {
 
   const total = subtotal + shipping;
 
+  const totalItems = items.reduce(
+    (sum, item) => sum + item.quantity,
+    0
+  );
+
+  /* =========================================================
+     CLOSE CART
+  ========================================================= */
+
+  const closeCart = () => {
+    dispatch(setCartOpen(false));
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* BACKDROP */}
+          {/* =================================================
+              BACKDROP
+          ================================================= */}
+
           <motion.button
             type="button"
             aria-label="Close cart"
-            onClick={() =>
-              dispatch(setCartOpen(false))
-            }
+            onClick={closeCart}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -70,7 +98,10 @@ export default function CartDrawer() {
             "
           />
 
-          {/* DRAWER */}
+          {/* =================================================
+              CART DRAWER
+          ================================================= */}
+
           <motion.aside
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
@@ -94,10 +125,14 @@ export default function CartDrawer() {
               shadow-2xl
             "
           >
-            {/* HEADER */}
+            {/* =================================================
+                HEADER
+            ================================================= */}
+
             <div
               className="
                 flex
+                shrink-0
                 items-center
                 justify-between
                 border-b
@@ -133,19 +168,13 @@ export default function CartDrawer() {
                     font-bold
                   "
                 >
-                  {items.reduce(
-                    (sum, item) =>
-                      sum + item.quantity,
-                    0
-                  )}
+                  {totalItems}
                 </span>
               </div>
 
               <button
                 type="button"
-                onClick={() =>
-                  dispatch(setCartOpen(false))
-                }
+                onClick={closeCart}
                 aria-label="Close cart"
                 className="
                   flex
@@ -157,15 +186,24 @@ export default function CartDrawer() {
                   border-white/15
                   transition
                   hover:border-white
+                  hover:bg-white
+                  hover:text-black
                 "
               >
                 <X size={18} />
               </button>
             </div>
 
-            {/* ITEMS */}
+            {/* =================================================
+                CART ITEMS
+            ================================================= */}
+
             <div className="flex-1 overflow-y-auto px-6 py-5">
               {items.length === 0 ? (
+                /* =================================================
+                   EMPTY CART
+                ================================================= */
+
                 <div
                   className="
                     flex
@@ -204,9 +242,7 @@ export default function CartDrawer() {
 
                   <button
                     type="button"
-                    onClick={() =>
-                      dispatch(setCartOpen(false))
-                    }
+                    onClick={closeCart}
                     className="
                       mt-7
                       border
@@ -227,10 +263,14 @@ export default function CartDrawer() {
                   </button>
                 </div>
               ) : (
+                /* =================================================
+                   ITEMS
+                ================================================= */
+
                 <div className="space-y-5">
                   {items.map((item) => (
                     <div
-                      key={item.id}
+                      key={`${item.id}-${item.size}`}
                       className="
                         border-b
                         border-white/10
@@ -238,13 +278,13 @@ export default function CartDrawer() {
                       "
                     >
                       <div className="flex gap-4">
+                        {/* =================================================
+                            PRODUCT IMAGE
+                        ================================================= */}
+
                         <Link
                           href={`/drop/${item.slug}`}
-                          onClick={() =>
-                            dispatch(
-                              setCartOpen(false)
-                            )
-                          }
+                          onClick={closeCart}
                           className="
                             relative
                             h-28
@@ -263,9 +303,13 @@ export default function CartDrawer() {
                           />
                         </Link>
 
+                        {/* =================================================
+                            PRODUCT INFO
+                        ================================================= */}
+
                         <div className="min-w-0 flex-1">
                           <div className="flex justify-between gap-3">
-                            <div>
+                            <div className="min-w-0">
                               <div
                                 className="
                                   font-mono
@@ -280,11 +324,7 @@ export default function CartDrawer() {
 
                               <Link
                                 href={`/drop/${item.slug}`}
-                                onClick={() =>
-                                  dispatch(
-                                    setCartOpen(false)
-                                  )
-                                }
+                                onClick={closeCart}
                                 className="
                                   mt-1
                                   block
@@ -293,17 +333,42 @@ export default function CartDrawer() {
                                   font-bold
                                   uppercase
                                   leading-none
+                                  transition
+                                  hover:text-red-500
                                 "
                               >
                                 {item.name}
                               </Link>
+
+                              {/* SIZE */}
+
+                              <div
+                                className="
+                                  mt-2
+                                  font-mono
+                                  text-[8px]
+                                  uppercase
+                                  tracking-[0.12em]
+                                  text-white/45
+                                "
+                              >
+                                SIZE:{" "}
+                                <span className="text-white">
+                                  {item.size}
+                                </span>
+                              </div>
                             </div>
+
+                            {/* REMOVE */}
 
                             <button
                               type="button"
                               onClick={() =>
                                 dispatch(
-                                  removeFromCart(item.id)
+                                  removeFromCart({
+                                    id: item.id,
+                                    size: item.size,
+                                  })
                                 )
                               }
                               aria-label={`Remove ${item.name}`}
@@ -318,14 +383,21 @@ export default function CartDrawer() {
                             </button>
                           </div>
 
+                          {/* =================================================
+                              QUANTITY + PRICE
+                          ================================================= */}
+
                           <div
                             className="
                               mt-5
                               flex
                               items-center
                               justify-between
+                              gap-3
                             "
                           >
+                            {/* QUANTITY */}
+
                             <div
                               className="
                                 flex
@@ -336,11 +408,13 @@ export default function CartDrawer() {
                             >
                               <button
                                 type="button"
+                                aria-label={`Decrease ${item.name} quantity`}
                                 onClick={() =>
                                   dispatch(
-                                    decreaseQuantity(
-                                      item.id
-                                    )
+                                    decreaseQuantity({
+                                      id: item.id,
+                                      size: item.size,
+                                    })
                                   )
                                 }
                                 className="
@@ -375,11 +449,13 @@ export default function CartDrawer() {
 
                               <button
                                 type="button"
+                                aria-label={`Increase ${item.name} quantity`}
                                 onClick={() =>
                                   dispatch(
-                                    increaseQuantity(
-                                      item.id
-                                    )
+                                    increaseQuantity({
+                                      id: item.id,
+                                      size: item.size,
+                                    })
                                   )
                                 }
                                 className="
@@ -396,6 +472,8 @@ export default function CartDrawer() {
                                 <Plus size={12} />
                               </button>
                             </div>
+
+                            {/* ITEM TOTAL */}
 
                             <span
                               className="
@@ -419,10 +497,14 @@ export default function CartDrawer() {
               )}
             </div>
 
-            {/* FOOTER */}
+            {/* =================================================
+                FOOTER
+            ================================================= */}
+
             {items.length > 0 && (
               <div
                 className="
+                  shrink-0
                   border-t
                   border-white/10
                   bg-[#0d0d0d]
@@ -430,7 +512,13 @@ export default function CartDrawer() {
                   py-5
                 "
               >
+                {/* =================================================
+                    SUMMARY
+                ================================================= */}
+
                 <div className="space-y-3">
+                  {/* SUBTOTAL */}
+
                   <div
                     className="
                       flex
@@ -443,8 +531,13 @@ export default function CartDrawer() {
                     "
                   >
                     <span>Subtotal</span>
-                    <span>A${subtotal.toFixed(2)}</span>
+
+                    <span>
+                      A${subtotal.toFixed(2)}
+                    </span>
                   </div>
+
+                  {/* SHIPPING */}
 
                   <div
                     className="
@@ -458,12 +551,15 @@ export default function CartDrawer() {
                     "
                   >
                     <span>Shipping</span>
+
                     <span>
                       {shipping === 0
                         ? "FREE"
                         : `A$${shipping.toFixed(2)}`}
                     </span>
                   </div>
+
+                  {/* TOTAL */}
 
                   <div
                     className="
@@ -479,7 +575,10 @@ export default function CartDrawer() {
                     "
                   >
                     <span>Total</span>
-                    <span>A${total.toFixed(2)}</span>
+
+                    <span>
+                      A${total.toFixed(2)}
+                    </span>
                   </div>
 
                   <p
@@ -492,15 +591,18 @@ export default function CartDrawer() {
                       text-white/30
                     "
                   >
-                    Free shipping on orders over A$100
+                    Free shipping on orders over
+                    A$100
                   </p>
                 </div>
 
+                {/* =================================================
+                    CHECKOUT
+                ================================================= */}
+
                 <Link
                   href="/checkout"
-                  onClick={() =>
-                    dispatch(setCartOpen(false))
-                  }
+                  onClick={closeCart}
                   className="
                     mt-5
                     flex
@@ -522,11 +624,13 @@ export default function CartDrawer() {
                   <ArrowRight size={14} />
                 </Link>
 
+                {/* =================================================
+                    CONTINUE SHOPPING
+                ================================================= */}
+
                 <button
                   type="button"
-                  onClick={() =>
-                    dispatch(setCartOpen(false))
-                  }
+                  onClick={closeCart}
                   className="
                     mt-2
                     flex
